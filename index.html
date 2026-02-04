@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CHATBRU3 // NEXUS_RELAY_NODE // AUTO_MESSENGER</title>
+</head>
+<body>
+    <canvas id="matrix"></canvas>
+    
+    <div class="container">
+        <!-- HEADER -->
+        <div class="header">
+            <h1>CHATBRU3.VERCEL.APP</h1>
+            <p>═══ NEXUS RELAY NODE // AUTO MESSENGER SYSTEM ═══</p>
+        </div>
+        
+        <!-- STATS GRID -->
+        <div class="stats-grid">
+            <div class="stat-box">
+                <div class="stat-label">MESSAGES SENT</div>
+                <div class="stat-value" id="msg-count">0</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">SUCCESS RATE</div>
+                <div class="stat-value" id="success-rate">100%</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">UPTIME</div>
+                <div class="stat-value" id="uptime">00:00</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">QUEUE SIZE</div>
+                <div class="stat-value" id="queue-size">0</div>
+            </div>
+        </div>
+        
+        <!-- MAIN CONTENT -->
+        <div class="main-content">
+            <!-- TERMINAL -->
+            <div class="terminal-panel">
+                <div class="terminal-header">
+                    ▶ SYSTEM ACTIVITY MONITOR
+                </div>
+                <div id="terminal"></div>
+            </div>
+            
+            <!-- SIDE PANEL -->
+            <div class="side-panel">
+                <!-- CONNECTION STATUS -->
+                <div class="info-box">
+                    <h3>📡 CONNECTION STATUS</h3>
+                    <div class="connection-status">
+                        <div class="conn-item" id="conn-chatbru4">
+                            <span>chatbru4.vercel.app</span>
+                            <div class="status-dot" id="dot-chatbru4"></div>
+                        </div>
+                        <div class="conn-item" id="conn-chatbru1">
+                            <span>chatbru1.vercel.app</span>
+                            <div class="status-dot" id="dot-chatbru1"></div>
+                        </div>
+                    </div>
+                    <div class="loading-bar">
+                        <div class="loading-fill"></div>
+                    </div>
+                </div>
+                
+                <!-- SYSTEM INFO -->
+                <div class="info-box">
+                    <h3>⚙️ SYSTEM CONFIGURATION</h3>
+                    <div class="info-item">Node: <span>CHATBRU3</span></div>
+                    <div class="info-item">Primary Target: <span>chatbru4.vercel.app</span></div>
+                    <div class="info-item">Secondary Target: <span>chatbru1.vercel.app</span></div>
+                    <div class="info-item">Mode: <span id="mode-text">AUTO</span></div>
+                    <div class="info-item">Interval: <span id="interval-text">5s</span></div>
+                    <div class="info-item">API: <span>Ably Realtime</span></div>
+                </div>
+                
+                <!-- CONTROL PANEL -->
+                <div class="control-panel">
+                    <h3>🎮 CONTROLS</h3>
+                    <button class="control-btn active" id="auto-btn" onclick="toggleAuto()">AUTO MODE: ON</button>
+                    <button class="control-btn" onclick="sendManual()">SEND MANUAL MESSAGE</button>
+                    <button class="control-btn" onclick="clearLogs()">CLEAR LOGS</button>
+                </div>
+                
+                <!-- MESSAGE INPUT -->
+                <div class="message-input-panel">
+                    <h3>✉️ CUSTOM MESSAGE</h3>
+                    <textarea class="message-input" id="custom-msg" placeholder="Enter custom message to broadcast..."></textarea>
+                    <button class="send-btn" onclick="sendCustomMessage()">BROADCAST NOW</button>
+                </div>
+            </div>
+        </div>
+    </div>
+        <style>
+        :root {
+            --neon-green: #00ff88;
+            --neon-blue: #00e5ff;
+            --neon-red: #ff0044;
+            --neon-purple: #ff00ff;
+            --warn-yellow: #ffcc00;
+            --bg-black: #000;
+            --panel-bg: rgba(0, 8, 4, 0.95);
+            --border-dark: #111;
+            --text-dim: #777;
+            --neon-orange: #ff9900;
+            --neon-pink: #ff69b4;
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: var(--bg-black);
+            color: var(--neon-green);
+            font-family: 'Courier New', monospace;
+            overflow: hidden;
+            height: 100vh;
+        }
+        /* MATRIX RAIN BACKGROUND */
+        canvas#matrix {
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            opacity: 0.6;
+        }
+        /* MAIN CONTAINER */
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            padding: 20px;
+            gap: 15px;
+        }
+        /* HEADER */
+        .header {
+            background: var(--panel-bg);
+            border: 2px solid var(--neon-blue);
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 0 20px var(--neon-blue);
+            animation: pulse-glow 2s infinite;
+        }
+        @keyframes pulse-glow {
+            0% { box-shadow: 0 0 10px var(--neon-blue); }
+            50% { box-shadow: 0 0 30px var(--neon-blue); }
+            100% { box-shadow: 0 0 10px var(--neon-blue); }
+        }
+        .header h1 {
+            color: var(--neon-blue);
+            font-size: 28px;
+            text-shadow: 0 0 10px var(--neon-blue);
+            margin-bottom: 10px;
+        }
+        .header p {
+            color: var(--neon-green);
+            font-size: 14px;
+        }
+        /* STATS GRID */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+        .stat-box {
+            background: var(--panel-bg);
+            border: 1px solid var(--neon-green);
+            padding: 15px;
+            text-align: center;
+            transition: 0.3s;
+        }
+        .stat-box:hover {
+            box-shadow: 0 0 15px var(--neon-green);
+            transform: scale(1.05);
+        }
+        .stat-label {
+            color: var(--text-dim);
+            font-size: 11px;
+            margin-bottom: 5px;
+        }
+        .stat-value {
+            color: var(--neon-green);
+            font-size: 24px;
+            font-weight: bold;
+            text-shadow: 0 0 5px var(--neon-green);
+        }
+        /* MAIN CONTENT AREA */
+        .main-content {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 15px;
+            flex: 1;
+            overflow: hidden;
+        }
+        /* TERMINAL */
+        .terminal-panel {
+            background: var(--panel-bg);
+            border: 2px solid var(--neon-purple);
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 0 15px var(--neon-purple);
+        }
+        .terminal-header {
+            background: rgba(255, 0, 255, 0.1);
+            padding: 10px 15px;
+            border-bottom: 1px solid var(--neon-purple);
+            color: var(--neon-purple);
+            font-weight: bold;
+        }
+        #terminal {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+            font-size: 12px;
+            line-height: 1.6;
+            background: var(--bg-black);
+        }
+        #terminal::-webkit-scrollbar {
+            width: 8px;
+        }
+        #terminal::-webkit-scrollbar-track {
+            background: #000;
+        }
+        #terminal::-webkit-scrollbar-thumb {
+            background: var(--neon-purple);
+        }
+        /* SIDE PANEL */
+        .side-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            overflow-y: auto;
+        }
+        .info-box {
+            background: var(--panel-bg);
+            border: 2px solid var(--neon-orange);
+            padding: 15px;
+        }
+        .info-box h3 {
+            color: var(--neon-orange);
+            font-size: 14px;
+            margin-bottom: 10px;
+            text-shadow: 0 0 5px var(--neon-orange);
+        }
+        .info-item {
+            color: var(--text-dim);
+            font-size: 11px;
+            margin: 5px 0;
+        }
+        .info-item span {
+            color: var(--neon-green);
+        }
+        /* CONNECTION STATUS */
+        .connection-status {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .conn-item {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--neon-blue);
+            padding: 10px;
+            font-size: 11px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .conn-item.active {
+            border-color: var(--neon-green);
+            box-shadow: 0 0 10px var(--neon-green);
+        }
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--neon-red);
+            animation: blink 1s infinite;
+        }
+        .status-dot.online {
+            background: var(--neon-green);
+        }
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+        /* LOADING BAR */
+        .loading-bar {
+            width: 100%;
+            height: 6px;
+            background: rgba(0, 255, 136, 0.2);
+            margin-top: 8px;
+            overflow: hidden;
+        }
+        .loading-fill {
+            height: 100%;
+            background: var(--neon-green);
+            width: 0%;
+            animation: loading 2s infinite;
+        }
+        @keyframes loading {
+            0% { width: 0%; }
+            50% { width: 100%; }
+            100% { width: 0%; }
+        }
+        /* CONTROL PANEL */
+        .control-panel {
+            background: var(--panel-bg);
+            border: 2px solid var(--neon-red);
+            padding: 15px;
+        }
+        .control-panel h3 {
+            color: var(--neon-red);
+            font-size: 14px;
+            margin-bottom: 10px;
+            text-shadow: 0 0 5px var(--neon-red);
+        }
+        .control-btn {
+            width: 100%;
+            background: rgba(255, 0, 68, 0.2);
+            border: 1px solid var(--neon-red);
+            color: var(--neon-red);
+            padding: 12px;
+            margin: 5px 0;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+        .control-btn:hover {
+            background: var(--neon-red);
+            color: #000;
+            box-shadow: 0 0 20px var(--neon-red);
+        }
+        .control-btn.active {
+            background: var(--neon-green);
+            border-color: var(--neon-green);
+            color: #000;
+        }
+        /* MESSAGE INPUT */
+        .message-input-panel {
+            background: var(--panel-bg);
+            border: 2px solid var(--neon-blue);
+            padding: 15px;
+        }
+        .message-input-panel h3 {
+            color: var(--neon-blue);
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+        .message-input {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid var(--neon-green);
+            color: var(--neon-green);
+            padding: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            resize: vertical;
+            min-height: 60px;
+        }
+        .send-btn {
+            width: 100%;
+            background: var(--neon-green);
+            border: none;
+            color: #000;
+            padding: 12px;
+            margin-top: 10px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            font-size: 13px;
+        }
+        .send-btn:hover {
+            background: var(--warn-yellow);
+            box-shadow: 0 0 20px var(--warn-yellow);
+        }
+        /* LOG COLORS */
+        .log-success { color: var(--neon-green); font-weight: bold; }
+        .log-error { color: var(--neon-red); font-weight: bold; }
+        .log-info { color: var(--neon-blue); }
+        .log-warn { color: var(--warn-yellow); }
+        .log-dim { color: var(--text-dim); }
+        .log-purple { color: var(--neon-purple); }
+        .log-orange { color: var(--neon-orange); }
+    </style>
+
+    <script src="https://cdn.ably.io/lib/ably.min-1.js"></script>
+    <script>
+        // ═══════════════════════════════════════════════════════════════
+        //                      CONFIGURATION
+        // ═══════════════════════════════════════════════════════════════
+        const CONFIG = {
+            ablyApiKey: 'UNMYag.VcluoA:gkmv1VpeHWmrC7W0NJXRcdQZaRAJP0Z5uAj_dooMjuc',
+            endpoints: {
+                chatbru4: 'https://chatbru4.vercel.app',
+                chatbru1: 'https://chatbru1.vercel.app'
+            },
+            autoInterval: 5000, // 5 seconds
+            nodeName: 'CHATBRU3'
+        };
+        
+        // ═══════════════════════════════════════════════════════════════
+        //                      GLOBAL STATE
+        // ═══════════════════════════════════════════════════════════════
+        let messageCount = 0;
+        let successCount = 0;
+        let autoMode = true;
+        let autoTimer = null;
+        let startTime = Date.now();
+        let ably = null;
+        let channel = null;
+        
+        // ═══════════════════════════════════════════════════════════════
+        //                      MATRIX RAIN
+        // ═══════════════════════════════════════════════════════════════
+        const canvas = document.getElementById('matrix');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        
+        const chars = '01CHATBRU3RELAY▓▒░';
+        const fontSize = 12;
+        const columns = canvas.width / fontSize;
+        const drops = Array(Math.floor(columns)).fill(1);
+        
+        function drawMatrix() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            ctx.fillStyle = '#00ff88';
+            ctx.font = fontSize + 'px monospace';
+            
+            for (let i = 0; i < drops.length; i++) {
+                const text = chars[Math.floor(Math.random() * chars.length)];
+                ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+                
+                if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+                    drops[i] = 0;
+                }
+                drops[i]++;
+            }
+        }
+        setInterval(drawMatrix, 33);
+        
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+        
+        // ═══════════════════════════════════════════════════════════════
+        //                      LOGGING FUNCTIONS
+        // ═══════════════════════════════════════════════════════════════
+        const terminal = document.getElementById('terminal');
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logDiv = document.createElement('div');
+            logDiv.className = `log-${type}`;
+            logDiv.innerHTML = `[${timestamp}] ${message}`;
+            terminal.appendChild(logDiv);
+            terminal.scrollTop = terminal.scrollHeight;
+            
+            // Keep only last 100 logs
+            while (terminal.children.length > 100) {
+                terminal.removeChild(terminal.firstChild);
+            }
+        }
+        
+        function clearLogs() {
+            terminal.innerHTML = '';
+            log('Logs cleared', 'dim');
+        }
+        
+        // ═══════════════════════════════════════════════════════════════
+        //                      STATS UPDATE
+        // ═══════════════════════════════════════════════════════════════
+        function updateStats() {
+            document.getElementById('msg-count').textContent = messageCount;
+            
+            const successRate = messageCount > 0 ? Math.round((successCount / (messageCount * 2)) * 100) : 100;
+            document.getElementById('success-rate').textContent = successRate + '%';
+            
+            const uptime = Math.floor((Date.now() - startTime) / 1000);
+            const minutes = Math.floor(uptime / 60);
+            const seconds = uptime % 60;
+            document.getElementById('uptime').textContent = 
+                `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }
+        
+        setInterval(updateStats, 1000);
+        
+        // ═══════════════════════════════════════════════════════════════
+        //                      ABLY INITIALIZATION
+        // ═══════════════════════════════════════════════════════════════
+        function initAbly() {
+            try {
+                log('Initializing Ably connection...', 'info');
+                ably = new Ably.Realtime(CONFIG.ablyApiKey);
+                channel = ably.channels.get('chatbru-relay');
+                
+                ably.connection.on('connected', () => {
+                    log('✅ Ably connection established', 'success');
+                    document.getElementById('dot-chatbru4').classList.add('online');
+                    document.getElementById('dot-chatbru1').classList.add('online');
+                });
+                
+                ably.connection.on('failed', () => {
+                    log('❌ Ably connection failed', 'error');
+                });
+                
+                channel.subscribe('message', (message) => {
+                    log(`📨 Received: ${message.data.content}`, 'purple');
+                });
+                
+            } catch (error) {
+                log(`❌ Ably initialization error: ${error.message}`, 'error');
+            }
+        }
+        
+        // ═══════════════════════════════════════════════════════════════
+        //                      SEND MESSAGE FUNCTIONS
+        // ═══════════════════════════════════════════════════════════════
+        async function sendToEndpoint(endpoint, message) {
+            try {
+                const response = await fetch(`${endpoint}/api/message`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${CONFIG.ablyApiKey}`
+                    },
+                    body: JSON.stringify({
+                        message: message,
+                        from: CONFIG.nodeName,
+                        timestamp: new Date().toISOString()
+                    })
+                });
+                
+                if (response.ok) {
+                    successCount++;
+                    return true;
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+            } catch (error) {
+                log(`❌ Failed to send to ${endpoint}: ${error.message}`, 'error');
+                return false;
+            }
+        }
+        
+        async function broadcastMessage(message) {
+            messageCount++;
+            log(`📤 Broadcasting: "${message}"`, 'info');
+            
+            // Send to chatbru4
+            const result4 = await sendToEndpoint(CONFIG.endpoints.chatbru4, message);
+            if (result4) {
+                log(`✅ Sent to chatbru4.vercel.app`, 'success');
+                document.getElementById('conn-chatbru4').classList.add('active');
+                setTimeout(() => document.getElementById('conn-chatbru4').classList.remove('active'), 1000);
+            }
+            
+            // Send to chatbru1
+            const result1 = await sendToEndpoint(CONFIG.endpoints.chatbru1, message);
+            if (result1) {
+                log(`✅ Sent to chatbru1.vercel.app`, 'success');
+                document.getElementById('conn-chatbru1').classList.add('active');
+                setTimeout(() => document.getElementById('conn-chatbru1').classList.remove('active'), 1000);
+            }
+            
+            // Publish to Ably
+            if (channel) {
+                try {
+                    await channel.publish('message', {
+                        content: message,
+                        from: CONFIG.nodeName,
+                        timestamp: new Date().toISOString()
+                    });
+                    log(`✅ Published to Ably channel`, 'success');
+                } catch (error) {
+                    log(`❌ Ably publish error: ${error.message}`, 'error');
+                }
+            }
+            
+            updateStats();
+        }
+        
+        // ═══════════════════════════════════════════════════════════════
+        //                      AUTO MESSAGE GENERATION
+        // ═══════════════════════════════════════════════════════════════
+        function generateAutoMessage() {
+            const messages = [
+                `CHATBRU3 relay active - System check ${Math.floor(Math.random() * 1000)}`,
+                `Node CHATBRU3 transmitting data packet #${messageCount + 1}`,
+                `Automated broadcast from CHATBRU3 at ${new Date().toLocaleTimeString()}`,
+                `CHATBRU3 -> Network relay operational - Status: GREEN`,
+                `Message relay: CHATBRU3 broadcasting to network nodes`,
+                `CHATBRU3 system heartbeat - All systems nominal`,
+                `Auto-message ${messageCount + 1}: CHATBRU3 online and transmitting`,
+                `CHATBRU3 network node - Broadcasting to connected endpoints`,
+                `Relay transmission from CHATBRU3 - Timestamp: ${Date.now()}`,
+                `CHATBRU3: Automated message relay in progress...`,
+                `System notification from CHATBRU3 node`,
+                `CHATBRU3 broadcast: Network connectivity verified`,
+                `Automated sync message from CHATBRU3 relay station`,
+                `CHATBRU3 node broadcasting: Connection stable`,
+                `Message #${messageCount + 1} from CHATBRU3 relay system`
+            ];
+            
+            return messages[Math.floor(Math.random() * messages.length)];
+        }
+        
+        // ═══════════════════════════════════════════════════════════════
+        //                      AUTO MODE FUNCTIONS
+        // ═══════════════════════════════════════════════════════════════
+        function startAutoMode() {
+            if (autoTimer) return;
+            
+            autoMode = true;
+            document.getElementById('auto-btn').classList.add('active');
+            document.getElementById('auto-btn').textContent = 'AUTO MODE: ON';
+            log('🤖 Auto mode ENABLED', 'success');
+            
+            autoTimer = setInterval(() => {
+                const message = generateAutoMessage();
+                broadcastMessage(message);
+            }, CONFIG.autoInterval);
+            
+            // Send first message immediately
+            broadcastMessage(generateAutoMessage());
+        }
+        
+        function stopAutoMode() {
+            if (autoTimer) {
+                clearInterval(autoTimer);
+                autoTimer = null;
+            }
+            
+            autoMode = false;
+            document.getElementById('auto-btn').classList.remove('active');
+            document.getElementById('auto-btn').textContent = 'AUTO MODE: OFF';
+            log('⏸️ Auto mode DISABLED', 'warn');
+        }
+        
+        function toggleAuto() {
+            if (autoMode) {
+                stopAutoMode();
+            } else {
+                startAutoMode();
+            }
+        }
+        
+        // ═══════════════════════════════════════════════════════════════
+        //                      MANUAL CONTROLS
+        // ═══════════════════════════════════════════════════════════════
+        function sendManual() {
+            const message = generateAutoMessage();
+            log('📨 Manual send triggered', 'orange');
+            broadcastMessage(message);
+        }
+        
+        function sendCustomMessage() {
+            const customMsg = document.getElementById('custom-msg').value.trim();
+            if (!customMsg) {
+                log('❌ Cannot send empty message', 'error');
+                return;
+            }
+            
+            log('📨 Broadcasting custom message', 'orange');
+            broadcastMessage(customMsg);
+            document.getElementById('custom-msg').value = '';
+        }
+        
+        // Allow Enter key in textarea to send
+        document.getElementById('custom-msg').addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.key === 'Enter') {
+                sendCustomMessage();
+            }
+        });
+        
+        // ═══════════════════════════════════════════════════════════════
+        //                      INITIALIZATION
+        // ═══════════════════════════════════════════════════════════════
+        window.addEventListener('load', () => {
+            log('═══════════════════════════════════════════════════', 'purple');
+            log('CHATBRU3 RELAY NODE INITIALIZING...', 'purple');
+            log('═══════════════════════════════════════════════════', 'purple');
+            log('', 'dim');
+            log(`Node Name: ${CONFIG.nodeName}`, 'info');
+            log(`Primary Target: ${CONFIG.endpoints.chatbru4}`, 'info');
+            log(`Secondary Target: ${CONFIG.endpoints.chatbru1}`, 'info');
+            log(`Auto Interval: ${CONFIG.autoInterval / 1000}s`, 'info');
+            log('', 'dim');
+            
+            initAbly();
+            
+            setTimeout(() => {
+                log('✅ System initialization complete', 'success');
+                log('🚀 Starting auto broadcast mode...', 'success');
+                startAutoMode();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>
