@@ -771,9 +771,9 @@
         }
 
         function initializeChannels() {
-            usersChannel = ably.channels.get('bruchannel-users');
-            messagesChannel = ably.channels.get('bruchannel-messages');
-            presenceChannel = ably.channels.get('bruchannel-presence');
+            usersChannel = ably.channels.get('bruchannel');
+            messagesChannel = ably.channels.get('bruchannel');
+            presenceChannel = ably.channels.get('bruchannel');
 
             // Subscribe to user events
             usersChannel.subscribe('user-registered', handleUserRegistered);
